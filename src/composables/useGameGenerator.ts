@@ -99,9 +99,9 @@ export function useGameGenerator() {
       const html = extractHtmlFromResponse(fullText)
       const elapsed = Date.now() - startTime.value
 
-      // 使用 usage 中的真实数据
+      // token 数用 API 返回的真实值，速度按本地时间计算
       const finalTokenCount = usageData?.completion_tokens || Math.round(fullText.length / 3)
-      const finalTokenSpeed = usageData?.tokens_per_second || Math.round((finalTokenCount / elapsed) * 1000)
+      const finalTokenSpeed = Math.round((finalTokenCount / elapsed) * 1000)
 
       const validation = validateGameHtml(html)
       if (!validation.valid) {

@@ -18,12 +18,12 @@ watch(() => props.game.rawText, () => {
     startTime.value = Date.now()
     timer = setInterval(() => {
       const elapsed = (Date.now() - startTime.value) / 1000
-      // 优先使用 API 返回的真实 token 数
+      if (elapsed <= 0) return
+      // token 数用 API 真实值，速度按本地时间算
       if (props.game.tokenCount > 0) {
         liveTokenCount.value = props.game.tokenCount
-        liveSpeed.value = props.game.tokenSpeed || Math.round(props.game.tokenCount / elapsed)
-      } else if (elapsed > 0 && props.game.rawText) {
-        // 没有真实数据时用字符数估算（1 token ≈ 3 字符）
+        liveSpeed.value = Math.round(props.game.tokenCount / elapsed)
+      } else if (props.game.rawText) {
         const estimated = Math.round(props.game.rawText.length / 3)
         liveTokenCount.value = estimated
         liveSpeed.value = Math.round(estimated / elapsed)
