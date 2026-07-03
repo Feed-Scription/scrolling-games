@@ -6,10 +6,8 @@ const props = defineProps<{
   game: Game
 }>()
 
-// 实时计算 token 速度
 const currentTokenCount = computed(() => props.game.rawText?.length || 0)
 const startTime = ref(props.game.generatedAt || Date.now())
-const elapsedSec = ref(0)
 const liveSpeed = ref(0)
 
 let timer: ReturnType<typeof setInterval> | null = null
@@ -18,9 +16,9 @@ watch(() => props.game.rawText, () => {
   if (!timer) {
     startTime.value = Date.now()
     timer = setInterval(() => {
-      elapsedSec.value = (Date.now() - startTime.value) / 1000
-      if (elapsedSec.value > 0 && currentTokenCount.value > 0) {
-        liveSpeed.value = Math.round(currentTokenCount.value / elapsedSec.value)
+      const elapsed = (Date.now() - startTime.value) / 1000
+      if (elapsed > 0 && currentTokenCount.value > 0) {
+        liveSpeed.value = Math.round(currentTokenCount.value / elapsed)
       }
     }, 200)
   }
@@ -28,7 +26,7 @@ watch(() => props.game.rawText, () => {
 
 const displayText = computed(() => {
   if (!props.game.rawText) return '等待生成...'
-  return props.game.rawText.slice(-500)
+  return props.game.rawText
 })
 
 const hasContent = computed(() => !!props.game.rawText)
@@ -36,22 +34,23 @@ const hasContent = computed(() => !!props.game.rawText)
 
 <template>
   <div class="generating">
+    <!-- 代码流铺满整个区域 -->
     <div v-if="!hasContent" class="waiting">
       <div class="spinner"></div>
       <p class="waiting-text">正在生成游戏...</p>
     </div>
-    <div v-else class="streaming">
-      <div class="header">
-        <div class="header-left">
-          <span class="dot"></span>
-          <span>实时生成中</span>
-        </div>
-        <div class="speed-badge">
-          <span class="speed-value">{{ liveSpeed }}</span>
-          <span class="speed-unit">tokens/s</span>
-        </div>
+    <pre v-else class="code-preview">{{ displayText }}</pre>
+
+    <!-- 底部状态栏 - 固定在导航栏上方 -->
+    <div class="bottom-bar">
+      <div class="bar-left">
+        <span class="dot"></span>
+        <span>实时生成中</span>
       </div>
-      <pre class="code-preview">{{ displayText }}</pre>
+      <div class="speed-badge">
+        <span class="speed-value">{{ liveSpeed }}</span>
+        <span class="speed-unit">tokens/s</span>
+      </div>
     </div>
   </div>
 </template>
@@ -61,14 +60,18 @@ const hasContent = computed(() => !!props.game.rawText)
   width: 100%;
   height: 100%;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+  flex-direction: column;
+  background: #0a0a14;
   color: #e2e8f0;
+  overflow: hidden;
 }
 
 .waiting {
-  text-align: center;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .spinner {
@@ -78,7 +81,7 @@ const hasContent = computed(() => !!props.game.rawText)
   border-top-color: #6366f1;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin: 0 auto 16px;
+  margin-bottom: 16px;
 }
 
 @keyframes spin {
@@ -90,23 +93,33 @@ const hasContent = computed(() => !!props.game.rawText)
   opacity: 0.8;
 }
 
-.streaming {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+.code-preview {
+  flex: 1;
+  padding: 12px;
+  margin: 0;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  font-size: 11px;
+  line-height: 1.45;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: #64748b;
+  background: transparent;
 }
 
-.header {
+.bottom-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.6);
+  border-top: 1px solid rgba(99, 102, 241, 0.2);
   flex-shrink: 0;
+  z-index: 1;
 }
 
-.header-left {
+.bar-left {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -147,17 +160,5 @@ const hasContent = computed(() => !!props.game.rawText)
 .speed-unit {
   font-size: 11px;
   color: #6366f1;
-}
-
-.code-preview {
-  flex: 1;
-  padding: 14px;
-  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
-  font-size: 11px;
-  line-height: 1.5;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  word-break: break-all;
-  color: #64748b;
 }
 </style>
