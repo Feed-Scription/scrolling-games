@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import { useSettings } from './useSettings'
 import { buildGamePrompt } from '../prompts/gamePrompt'
-import { extractHtmlFromResponse, parseSSEChunk, generateId, validateGameHtml } from '../utils/htmlParser'
+import { extractHtmlFromResponse, extractContentFromBuffer, generateId, validateGameHtml } from '../utils/htmlParser'
 import type { Game } from '../types'
 
 // 检测是否在 Vercel 环境（有 /api 路由）
@@ -68,22 +68,26 @@ export function useGameGenerator() {
       if (!reader) throw new Error('无法读取响应流')
 
       const decoder = new TextDecoder()
-      let fullText = ''
+      let rawBuffer = ''    // 累积原始 SSE 数据
+      let fullText = ''     // 提取后的干净内容
 
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
 
         const chunk = decoder.decode(value, { stream: true })
-        const content = parseSSEChunk(chunk)
+        rawBuffer += chunk
 
-        // 解析出内容就用解析后的，否则用原始文本
-        fullText += content || chunk
+        // 从累积缓冲区中提取所有 delta.content
+        fullText = extractContentFromBuffer(rawBuffer)
 
         tokenCount.value = fullText.length
         currentProgress.value = fullText
         onProgress?.(fullText)
       }
+
+      // 最终提取
+      fullText = extractContentFromBuffer(rawBuffer)
 
       const html = extractHtmlFromResponse(fullText)
       const elapsed = Date.now() - startTime.value

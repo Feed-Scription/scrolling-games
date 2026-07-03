@@ -1,40 +1,30 @@
-export function parseSSEChunk(chunk: string): string {
-  const lines = chunk.split('\n')
-  let content = ''
+// 保留接口兼容（实际逻辑移到 extractContentFromBuffer）
+export function parseSSEChunk(_chunk: string): string {
+  return ''
+}
 
-  for (const line of lines) {
-    const trimmed = line.trim()
-    if (!trimmed) continue
-
-    // 标准 SSE 格式: data: {"choices":[{"delta":{"content":"..."}}]}
-    if (trimmed.startsWith('data:')) {
-      const data = trimmed.slice(5).trim()
-      if (data === '[DONE]') continue
-      try {
-        const parsed = JSON.parse(data)
-        // 只提取 content，跳过 reasoning_content（思考过程）
-        const delta = parsed.choices?.[0]?.delta?.content
-        if (delta) {
-          content += delta
-          continue
-        }
-      } catch {
-        // JSON 解析失败，跳过
-      }
-    }
-
-    // 非 SSE 格式：直接文本内容
-    if (!trimmed.startsWith('data:') && !trimmed.startsWith('id:') && !trimmed.startsWith('event:')) {
-      content += trimmed
+// 从累积的原始 SSE 数据中提取所有 delta.content（跳过 reasoning_content）
+export function extractContentFromBuffer(rawData: string): string {
+  const parts: string[] = []
+  // 匹配 "delta":{"content":"..." 但不匹配 "reasoning_content"
+  const regex = /"delta":\s*\{[^}]*"content"\s*:\s*"((?:[^"\\]|\\.)*)"/g
+  let match
+  while ((match = regex.exec(rawData)) !== null) {
+    try {
+      // 还原 JSON 转义
+      const unescaped = JSON.parse(`"${match[1]}"`)
+      parts.push(unescaped)
+    } catch {
+      // 跳过解析失败的片段
     }
   }
-
-  return content
+  return parts.join('')
 }
 
 export function extractHtmlFromResponse(text: string): string {
-  // 修复转义字符（模型输出中 \n 是字面量而非真正的换行）
-  let cleaned = text
+  // text 已经是通过 extractContentFromBuffer 清理后的内容
+  // 只需处理可能残留的转义字符
+  const cleaned = text
     .replace(/\\n/g, '\n')
     .replace(/\\t/g, '\t')
     .replace(/\\"/g, '"')
@@ -79,7 +69,6 @@ export function validateGameHtml(html: string): { valid: boolean; reason?: strin
   if (!html.includes('<canvas') && !html.includes('<div') && !html.includes('<button')) {
     return { valid: false, reason: '缺少可见元素' }
   }
-  // 检测模板/占位符（不是真正的游戏）
   if (html.includes('/* styles */') || html.includes('// game logic') || html.includes('/* game logic */')) {
     return { valid: false, reason: '只是代码模板，不是完整游戏' }
   }
@@ -100,24 +89,17 @@ export function validateGameHtml(html: string): { valid: boolean; reason?: strin
 
 export function extractGameTitle(html: string): string {
   const titleMatch = html.match(/<title>(.*?)<\/title>/i)
-  if (titleMatch) {
-    return titleMatch[1].trim()
-  }
+  if (titleMatch) return titleMatch[1].trim()
 
   const h1Match = html.match(/<h1[^>]*>(.*?)<\/h1>/i)
-  if (h1Match) {
-    return h1Match[1].replace(/<[^>]+>/g, '').trim()
-  }
+  if (h1Match) return h1Match[1].replace(/<[^>]+>/g, '').trim()
 
   const h2Match = html.match(/<h2[^>]*>(.*?)<\/h2>/i)
-  if (h2Match) {
-    return h2Match[1].replace(/<[^>]+>/g, '').trim()
-  }
+  if (h2Match) return h2Match[1].replace(/<[^>]+>/g, '').trim()
 
   return '未命名游戏'
 }
 
-// 从 HTML 中提取游戏玩法描述
 export function extractGameDescription(html: string): string {
   const descriptions: string[] = []
 
@@ -143,9 +125,7 @@ export function extractGameDescription(html: string): string {
     }
   }
 
-  if (descriptions.length > 0) {
-    return descriptions.slice(0, 3).join('; ')
-  }
+  if (descriptions.length > 0) return descriptions.slice(0, 3).join('; ')
 
   if (html.includes('snake') || html.includes('蛇')) return '贪吃蛇类游戏'
   if (html.includes('tetris') || html.includes('方块')) return '方块下落类游戏'
