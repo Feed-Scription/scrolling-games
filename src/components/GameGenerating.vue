@@ -23,13 +23,18 @@ watch(() => props.game.rawText, () => {
       }
     }, 200)
   }
-  // 始终滚动到底部（tail -f 效果）
   nextTick(() => {
     if (codeRef.value) {
       codeRef.value.scrollTop = codeRef.value.scrollHeight
     }
   })
 }, { immediate: true })
+
+// 判断当前是思考阶段还是输出阶段
+const isReasoning = computed(() => {
+  const text = props.game.rawText || ''
+  return text.length > 0 && !text.includes('<!DOCTYPE') && !text.includes('<html')
+})
 
 const displayText = computed(() => {
   if (!props.game.rawText) return '等待生成...'
@@ -41,18 +46,23 @@ const hasContent = computed(() => !!props.game.rawText)
 
 <template>
   <div class="generating">
-    <!-- 代码流铺满整个区域 -->
     <div v-if="!hasContent" class="waiting">
       <div class="spinner"></div>
       <p class="waiting-text">正在生成游戏...</p>
     </div>
-    <pre v-else ref="codeRef" class="code-preview">{{ displayText }}</pre>
+    <div v-else class="stream-area">
+      <!-- 思考阶段标签 -->
+      <div v-if="isReasoning" class="thinking-label">
+        <span class="thinking-dot"></span>
+        模型思考中...
+      </div>
+      <pre ref="codeRef" class="code-preview" :class="{ reasoning: isReasoning }">{{ displayText }}</pre>
+    </div>
 
-    <!-- 底部状态栏 - 固定在导航栏上方 -->
     <div class="bottom-bar">
       <div class="bar-left">
         <span class="dot"></span>
-        <span>实时生成中</span>
+        <span>{{ isReasoning ? '思考中' : '实时生成中' }}</span>
       </div>
       <div class="speed-badge">
         <span class="speed-value">{{ liveSpeed }}</span>
@@ -91,13 +101,34 @@ const hasContent = computed(() => !!props.game.rawText)
   margin-bottom: 16px;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.waiting-text { font-size: 16px; opacity: 0.8; }
+
+.stream-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.waiting-text {
-  font-size: 16px;
-  opacity: 0.8;
+.thinking-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  font-size: 12px;
+  color: #a78bfa;
+  background: rgba(167, 139, 250, 0.08);
+  flex-shrink: 0;
+}
+
+.thinking-dot {
+  width: 6px;
+  height: 6px;
+  background: #a78bfa;
+  border-radius: 50%;
+  animation: pulse 1.2s infinite;
 }
 
 .code-preview {
@@ -113,6 +144,11 @@ const hasContent = computed(() => !!props.game.rawText)
   word-break: break-all;
   color: #64748b;
   background: transparent;
+}
+
+.code-preview.reasoning {
+  color: #7c7c9a;
+  font-style: italic;
 }
 
 .bottom-bar {
@@ -142,10 +178,7 @@ const hasContent = computed(() => !!props.game.rawText)
   animation: pulse 1.5s infinite;
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
 .speed-badge {
   display: flex;
@@ -164,8 +197,5 @@ const hasContent = computed(() => !!props.game.rawText)
   font-variant-numeric: tabular-nums;
 }
 
-.speed-unit {
-  font-size: 11px;
-  color: #6366f1;
-}
+.speed-unit { font-size: 11px; color: #6366f1; }
 </style>

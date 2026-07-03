@@ -6,17 +6,25 @@ export function parseSSEChunk(_chunk: string): string {
 // 从累积的原始 SSE 数据中提取所有 delta.content（跳过 reasoning_content）
 export function extractContentFromBuffer(rawData: string): string {
   const parts: string[] = []
-  // 匹配 "delta":{"content":"..." 但不匹配 "reasoning_content"
   const regex = /"delta":\s*\{[^}]*"content"\s*:\s*"((?:[^"\\]|\\.)*)"/g
   let match
   while ((match = regex.exec(rawData)) !== null) {
     try {
-      // 还原 JSON 转义
-      const unescaped = JSON.parse(`"${match[1]}"`)
-      parts.push(unescaped)
-    } catch {
-      // 跳过解析失败的片段
-    }
+      parts.push(JSON.parse(`"${match[1]}"`))
+    } catch {}
+  }
+  return parts.join('')
+}
+
+// 提取 reasoning_content（思考过程）用于展示
+export function extractReasoningFromBuffer(rawData: string): string {
+  const parts: string[] = []
+  const regex = /"reasoning_content"\s*:\s*"((?:[^"\\]|\\.)*)"/g
+  let match
+  while ((match = regex.exec(rawData)) !== null) {
+    try {
+      parts.push(JSON.parse(`"${match[1]}"`))
+    } catch {}
   }
   return parts.join('')
 }
