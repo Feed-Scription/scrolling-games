@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import { useSettings } from './useSettings'
 import { buildGamePrompt } from '../prompts/gamePrompt'
-import { extractHtmlFromResponse, extractContentFromBuffer, extractReasoningFromBuffer, generateId, validateGameHtml } from '../utils/htmlParser'
+import { extractHtmlFromResponse, extractContentFromBuffer, extractReasoningFromBuffer, extractUsageFromBuffer, generateId, validateGameHtml } from '../utils/htmlParser'
 import type { Game } from '../types'
 
 // 检测是否在 Vercel 环境（有 /api 路由）
@@ -71,6 +71,7 @@ export function useGameGenerator() {
       let rawBuffer = ''
       let fullText = ''
       let reasoningText = ''
+      let usageData: { completion_tokens: number; tokens_per_second: number } | null = null
 
       while (true) {
         const { done, value } = await reader.read()
@@ -81,19 +82,26 @@ export function useGameGenerator() {
 
         fullText = extractContentFromBuffer(rawBuffer)
         reasoningText = extractReasoningFromBuffer(rawBuffer)
+        usageData = extractUsageFromBuffer(rawBuffer)
 
         // 有内容就显示内容，否则显示思考过程
         const displayText = fullText || reasoningText
-        tokenCount.value = fullText.length
+        // 使用 usage 中的真实 token 数，没有则用字符数估算
+        tokenCount.value = usageData?.completion_tokens || Math.round(fullText.length / 3)
         currentProgress.value = displayText
         onProgress?.(displayText)
       }
 
       // 最终提取
       fullText = extractContentFromBuffer(rawBuffer)
+      usageData = extractUsageFromBuffer(rawBuffer)
 
       const html = extractHtmlFromResponse(fullText)
       const elapsed = Date.now() - startTime.value
+
+      // 使用 usage 中的真实数据
+      const finalTokenCount = usageData?.completion_tokens || Math.round(fullText.length / 3)
+      const finalTokenSpeed = usageData?.tokens_per_second || Math.round((finalTokenCount / elapsed) * 1000)
 
       const validation = validateGameHtml(html)
       if (!validation.valid) {
@@ -107,7 +115,8 @@ export function useGameGenerator() {
         status: 'ready',
         generatedAt: Date.now(),
         generationTime: elapsed,
-        tokenSpeed: Math.round((tokenCount.value / elapsed) * 1000),
+        tokenCount: finalTokenCount,
+        tokenSpeed: finalTokenSpeed,
         rawText: fullText,
       }
 

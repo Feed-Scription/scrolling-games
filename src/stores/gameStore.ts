@@ -33,6 +33,7 @@ function persistState(state: GameState) {
           status: g.status,
           generatedAt: g.generatedAt,
           generationTime: g.generationTime,
+          tokenCount: g.tokenCount,
           tokenSpeed: g.tokenSpeed,
         })),
     }

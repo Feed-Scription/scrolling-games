@@ -7,8 +7,8 @@ const props = defineProps<{
 }>()
 
 const codeRef = ref<HTMLPreElement | null>(null)
-const currentTokenCount = computed(() => props.game.rawText?.length || 0)
 const startTime = ref(props.game.generatedAt || Date.now())
+const liveTokenCount = ref(0)
 const liveSpeed = ref(0)
 
 let timer: ReturnType<typeof setInterval> | null = null
@@ -18,8 +18,15 @@ watch(() => props.game.rawText, () => {
     startTime.value = Date.now()
     timer = setInterval(() => {
       const elapsed = (Date.now() - startTime.value) / 1000
-      if (elapsed > 0 && currentTokenCount.value > 0) {
-        liveSpeed.value = Math.round(currentTokenCount.value / elapsed)
+      // 优先使用 API 返回的真实 token 数
+      if (props.game.tokenCount > 0) {
+        liveTokenCount.value = props.game.tokenCount
+        liveSpeed.value = props.game.tokenSpeed || Math.round(props.game.tokenCount / elapsed)
+      } else if (elapsed > 0 && props.game.rawText) {
+        // 没有真实数据时用字符数估算（1 token ≈ 3 字符）
+        const estimated = Math.round(props.game.rawText.length / 3)
+        liveTokenCount.value = estimated
+        liveSpeed.value = Math.round(estimated / elapsed)
       }
     }, 200)
   }
@@ -30,7 +37,6 @@ watch(() => props.game.rawText, () => {
   })
 }, { immediate: true })
 
-// 判断当前是思考阶段还是输出阶段
 const isReasoning = computed(() => {
   const text = props.game.rawText || ''
   return text.length > 0 && !text.includes('<!DOCTYPE') && !text.includes('<html')
@@ -51,7 +57,6 @@ const hasContent = computed(() => !!props.game.rawText)
       <p class="waiting-text">正在生成游戏...</p>
     </div>
     <div v-else class="stream-area">
-      <!-- 思考阶段标签 -->
       <div v-if="isReasoning" class="thinking-label">
         <span class="thinking-dot"></span>
         模型思考中...
@@ -65,8 +70,11 @@ const hasContent = computed(() => !!props.game.rawText)
         <span>{{ isReasoning ? '思考中' : '实时生成中' }}</span>
       </div>
       <div class="speed-badge">
+        <span class="speed-value">{{ liveTokenCount }}</span>
+        <span class="speed-unit">tokens</span>
+        <span class="speed-sep">|</span>
         <span class="speed-value">{{ liveSpeed }}</span>
-        <span class="speed-unit">tokens/s</span>
+        <span class="speed-unit">t/s</span>
       </div>
     </div>
   </div>
@@ -191,11 +199,13 @@ const hasContent = computed(() => !!props.game.rawText)
 }
 
 .speed-value {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: #818cf8;
   font-variant-numeric: tabular-nums;
 }
 
-.speed-unit { font-size: 11px; color: #6366f1; }
+.speed-unit { font-size: 10px; color: #6366f1; }
+
+.speed-sep { color: #4a4a6a; font-size: 12px; }
 </style>

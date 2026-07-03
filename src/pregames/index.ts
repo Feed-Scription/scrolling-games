@@ -21,6 +21,7 @@ export function getPrebuiltGames(): Game[] {
     status: 'ready' as const,
     generatedAt: Date.now(),
     generationTime: 0,
+    tokenCount: 0,
     tokenSpeed: 0,
   }))
 }

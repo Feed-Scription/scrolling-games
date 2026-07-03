@@ -6,7 +6,8 @@ export interface Game {
   status: 'generating' | 'ready' | 'played'
   generatedAt: number
   generationTime: number
-  tokenSpeed: number
+  tokenCount: number     // 真实 token 数（来自 API usage）
+  tokenSpeed: number     // tokens/s（来自 API usage）
   rawText?: string
 }
 

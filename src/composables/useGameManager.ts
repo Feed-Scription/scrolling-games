@@ -105,6 +105,7 @@ export function useGameManager() {
       status: 'generating',
       generatedAt: Date.now(),
       generationTime: 0,
+      tokenCount: 0,
       tokenSpeed: 0,
     }
     addGame(placeholder)

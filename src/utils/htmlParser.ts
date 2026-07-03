@@ -29,6 +29,29 @@ export function extractReasoningFromBuffer(rawData: string): string {
   return parts.join('')
 }
 
+// 从 SSE 数据中提取 usage 中的 token 统计
+export function extractUsageFromBuffer(rawData: string): { completion_tokens: number; prompt_tokens: number; reasoning_tokens: number; tokens_per_second: number } | null {
+  const regex = /"usage"\s*:\s*\{[^}]*"completion_tokens"\s*:\s*(\d+)[^}]*\}/g
+  let lastMatch: RegExpExecArray | null
+  let match: RegExpExecArray | null = null
+  while ((lastMatch = regex.exec(rawData)) !== null) {
+    match = lastMatch
+  }
+  if (!match) return null
+  try {
+    const usageStr = match[0].replace(/"usage"\s*:\s*/, '')
+    const usage = JSON.parse(`{${usageStr}}`)
+    return {
+      completion_tokens: usage.completion_tokens || 0,
+      prompt_tokens: usage.prompt_tokens || 0,
+      reasoning_tokens: usage.completion_tokens_details?.reasoning_tokens || 0,
+      tokens_per_second: usage.pd?.decode_tokens_per_second || 0,
+    }
+  } catch {
+    return null
+  }
+}
+
 export function extractHtmlFromResponse(text: string): string {
   // text 已经是通过 extractContentFromBuffer 清理后的内容
   // 只需处理可能残留的转义字符
