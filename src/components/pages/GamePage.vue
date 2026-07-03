@@ -8,7 +8,7 @@ import OnboardingModal from '../OnboardingModal.vue'
 
 const { isInitialized, initializeGames } = useGameManager()
 const { memory, completeOnboarding } = useUserMemory()
-const { settings, hasApiKey } = useSettings()
+const { settings, canGenerate } = useSettings()
 
 // 每次进入游戏页面时检查是否需要初始化
 function checkAndInit() {
@@ -36,8 +36,8 @@ function handleOnboardingComplete() {
       @complete="handleOnboardingComplete"
     />
     
-    <!-- 未配置 API Key 时的提示横幅 -->
-    <div v-if="!hasApiKey()" class="api-hint-banner">
+    <!-- 未配置 API Key 时的提示横幅（Vercel 代理可用时不显示） -->
+    <div v-if="!canGenerate()" class="api-hint-banner">
       <span>未配置 API Key，仅显示预置游戏</span>
       <span class="hint-emoji">⚙️</span>
     </div>

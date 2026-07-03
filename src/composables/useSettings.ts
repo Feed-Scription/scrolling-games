@@ -43,6 +43,16 @@ export function useSettings() {
     return !!settings.value.apiKey
   }
 
+  // 是否有可用的 API（用户自带 Key 或 Vercel 代理可用）
+  function canGenerate(): boolean {
+    if (settings.value.apiKey) return true
+    if (typeof window !== 'undefined') {
+      return window.location.hostname.includes('vercel.app')
+        || window.location.hostname.includes('feedscription.com')
+    }
+    return false
+  }
+
   // Auto-save on change
   watch(settings, saveSettings, { deep: true })
 
@@ -51,5 +61,6 @@ export function useSettings() {
     updateSettings,
     resetSettings,
     hasApiKey,
+    canGenerate,
   }
 }

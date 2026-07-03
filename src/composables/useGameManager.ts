@@ -12,7 +12,7 @@ export function useGameManager() {
   const { gameState, addGame, updateGame, setCurrentIndex, clearGames, getUnplayedCount, getGeneratingCount } = store
   const { generateGame, isGenerating } = useGameGenerator()
   const { memoryContext, addGameHistory } = useUserMemory()
-  const { settings, hasApiKey } = useSettings()
+  const { settings, canGenerate } = useSettings()
   
   const isInitialized = ref(false)
   const generatingGameId = ref<string | null>(null)
@@ -72,7 +72,7 @@ export function useGameManager() {
   }
 
   function fillUnplayedQueue() {
-    if (!hasApiKey()) return
+    if (!canGenerate()) return
     const { maxConcurrent, maxUnplayed, maxTotal } = settings.value
 
     if (getGeneratingCount() >= maxConcurrent) return
@@ -84,7 +84,7 @@ export function useGameManager() {
 
   async function generateNextGame() {
     if (isGenerating.value) return
-    if (!hasApiKey()) return
+    if (!canGenerate()) return
 
     const total = gameState.games.filter(g => g.status === 'ready').length
     if (total >= settings.value.maxTotal) return
