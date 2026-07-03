@@ -1,7 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
@@ -45,33 +44,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!response.ok) {
       const errorText = await response.text()
+      console.error('Upstream API error:', response.status, errorText)
       return res.status(response.status).json({ error: `Upstream API error: ${errorText}` })
     }
 
-    // 流式转发
-    res.setHeader('Content-Type', 'text/event-stream')
-    res.setHeader('Cache-Control', 'no-cache')
-    res.setHeader('Connection', 'keep-alive')
-
-    const reader = response.body?.getReader()
-    if (!reader) {
-      return res.status(500).json({ error: 'No response stream' })
+    // 检查上游是否返回流
+    if (!response.body) {
+      return res.status(500).json({ error: 'Upstream returned no body' })
     }
 
+    // 流式转发 - 关键：不设置 Content-Length，让数据自然流出
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8')
+    res.setHeader('Cache-Control', 'no-cache, no-transform')
+    res.setHeader('X-Accel-Buffering', 'no')
+
+    const reader = response.body.getReader()
     const decoder = new TextDecoder()
+    let hasWritten = false
 
     while (true) {
       const { done, value } = await reader.read()
       if (done) break
       const chunk = decoder.decode(value, { stream: true })
-      res.write(chunk)
+      if (chunk.length > 0) {
+        hasWritten = true
+        res.write(chunk)
+        // 确保数据立即发送，不被缓冲
+        if (typeof (res as any).flush === 'function') {
+          (res as any).flush()
+        }
+      }
+    }
+
+    if (!hasWritten) {
+      console.warn('No data was written to response')
     }
 
     res.end()
   } catch (error) {
     console.error('Proxy error:', error)
-    return res.status(500).json({
-      error: error instanceof Error ? error.message : 'Internal server error'
-    })
+    // 确保错误时也返回 JSON
+    if (!res.headersSent) {
+      return res.status(500).json({
+        error: error instanceof Error ? error.message : 'Internal server error'
+      })
+    }
   }
 }

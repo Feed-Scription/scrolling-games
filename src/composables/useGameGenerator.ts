@@ -69,16 +69,34 @@ export function useGameGenerator() {
 
       const decoder = new TextDecoder()
       let fullText = ''
+      let rawBuffer = ''
 
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
 
         const chunk = decoder.decode(value, { stream: true })
+        rawBuffer += chunk
+
+        // 尝试解析 SSE 格式
         const content = parseSSEChunk(chunk)
         if (content) {
           fullText += content
-          tokenCount.value += content.length
+        } else {
+          // 非 SSE 格式，直接使用原始内容
+          fullText += chunk
+        }
+
+        tokenCount.value = fullText.length
+        currentProgress.value = fullText
+        onProgress?.(fullText)
+      }
+
+      // 最终用完整文本再做一次 SSE 解析（处理跨 chunk 的情况）
+      if (rawBuffer && !fullText.includes('<!DOCTYPE') && !fullText.includes('<html')) {
+        const reParsed = parseSSEChunk(rawBuffer)
+        if (reParsed && reParsed.length > fullText.length) {
+          fullText = reParsed
           currentProgress.value = fullText
           onProgress?.(fullText)
         }
