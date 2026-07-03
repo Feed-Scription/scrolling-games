@@ -26,7 +26,12 @@ jobs:
           cache: npm
 
       - run: npm ci
+
       - run: npm run build
+        env:
+          VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
+          VITE_BASE_URL: ${{ secrets.VITE_BASE_URL || 'https://api.xiaomimimo.com/v1' }}
+          VITE_MODEL: ${{ secrets.VITE_MODEL || 'xiaomi/mimo-v2.5-pro-ultraspeed' }}
 
       - uses: actions/upload-pages-artifact@v3
         with:

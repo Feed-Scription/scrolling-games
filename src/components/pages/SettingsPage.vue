@@ -213,8 +213,9 @@ function handleReset() {
       <p>Scrolling Games - AI游戏版抖音</p>
       <p>所有游戏均由 AI 实时生成</p>
       <a class="github-link" href="https://github.com/Feed-Scription/scrolling-games" target="_blank" rel="noopener">
-        GitHub 开源仓库
+        https://github.com/Feed-Scription/scrolling-games
       </a>
+      <br>
       <a class="github-link" href="https://wortou.ai" target="_blank" rel="noopener">
         https://wortou.ai
       </a>
