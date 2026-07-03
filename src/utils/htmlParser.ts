@@ -79,6 +79,10 @@ export function validateGameHtml(html: string): { valid: boolean; reason?: strin
   if (!html.includes('<canvas') && !html.includes('<div') && !html.includes('<button')) {
     return { valid: false, reason: '缺少可见元素' }
   }
+  // 检测模板/占位符（不是真正的游戏）
+  if (html.includes('/* styles */') || html.includes('// game logic') || html.includes('/* game logic */')) {
+    return { valid: false, reason: '只是代码模板，不是完整游戏' }
+  }
   const hasKeyboard = html.includes('keydown') || html.includes('keyup')
   const hasTouch = html.includes('touchstart') || html.includes('click') || html.includes('pointerdown')
     || html.includes('onclick') || html.includes('ontouchstart')
