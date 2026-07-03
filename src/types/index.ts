@@ -53,7 +53,7 @@ export const GAME_TAGS = [
 export const DEFAULT_SETTINGS: Settings = {
   model: import.meta.env.VITE_MODEL || 'xiaomi/mimo-v2.5-pro-ultraspeed',
   baseUrl: import.meta.env.VITE_BASE_URL || 'https://api.xiaomimimo.com/v1',
-  apiKey: import.meta.env.VITE_API_KEY || '',
+  apiKey: '',
   maxConcurrent: 1,
   maxUnplayed: 5,
   maxTotal: 10,
