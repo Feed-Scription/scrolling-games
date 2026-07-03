@@ -12,14 +12,10 @@ export function parseSSEChunk(chunk: string): string {
       if (data === '[DONE]') continue
       try {
         const parsed = JSON.parse(data)
+        // 只提取 content，跳过 reasoning_content（思考过程）
         const delta = parsed.choices?.[0]?.delta?.content
         if (delta) {
           content += delta
-          continue
-        }
-        const msgContent = parsed.choices?.[0]?.message?.content
-        if (msgContent) {
-          content += msgContent
           continue
         }
       } catch {
