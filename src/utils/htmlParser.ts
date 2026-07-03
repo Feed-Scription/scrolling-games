@@ -33,22 +33,29 @@ export function parseSSEChunk(chunk: string): string {
 }
 
 export function extractHtmlFromResponse(text: string): string {
-  const codeBlockMatch = text.match(/```(?:html)?\s*\n?([\s\S]*?)```/)
+  // 修复转义字符（模型输出中 \n 是字面量而非真正的换行）
+  let cleaned = text
+    .replace(/\\n/g, '\n')
+    .replace(/\\t/g, '\t')
+    .replace(/\\"/g, '"')
+    .replace(/\\\\/g, '\\')
+
+  const codeBlockMatch = cleaned.match(/```(?:html)?\s*\n?([\s\S]*?)```/)
   if (codeBlockMatch) {
     return codeBlockMatch[1].trim()
   }
 
-  const htmlMatch = text.match(/<!DOCTYPE html[\s\S]*<\/html>/i)
+  const htmlMatch = cleaned.match(/<!DOCTYPE html[\s\S]*<\/html>/i)
   if (htmlMatch) {
     return htmlMatch[0]
   }
 
-  const htmlTagMatch = text.match(/<html[\s\S]*<\/html>/i)
+  const htmlTagMatch = cleaned.match(/<html[\s\S]*<\/html>/i)
   if (htmlTagMatch) {
     return htmlTagMatch[0]
   }
 
-  return text.trim()
+  return cleaned.trim()
 }
 
 export function generateId(): string {
