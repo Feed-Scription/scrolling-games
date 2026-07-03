@@ -210,7 +210,7 @@ function handleReset() {
 
     <div class="info-section">
       <h3>关于</h3>
-      <p>Scrolling Games - AI游戏版抖音</p>
+      <p>Scrolling Games - AI游戏世界</p>
       <p>所有游戏均由 AI 实时生成</p>
       <a class="github-link" href="https://github.com/Feed-Scription/scrolling-games" target="_blank" rel="noopener">
         https://github.com/Feed-Scription/scrolling-games

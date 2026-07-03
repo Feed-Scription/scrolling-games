@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "AI游戏版抖音 - 上下滑动切换AI实时生成的H5小游戏",
+  "description": "AI游戏世界 - AI实时生成的H5小游戏平台",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
