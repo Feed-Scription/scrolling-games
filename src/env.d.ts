@@ -1,0 +1,16 @@
+/// <reference types="vite/client" />
+
+interface ImportMetaEnv {
+  readonly VITE_API_KEY: string
+  readonly VITE_BASE_URL: string
+  readonly VITE_MODEL: string
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv
+}
+
+declare module '*.html?raw' {
+  const content: string
+  export default content
+}

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>2048</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:system-ui,sans-serif;user-select:none;overflow:hidden}
+h1{color:#f59e0b;font-size:22px;margin-bottom:4px}
+.info{color:#94a3b8;font-size:14px;margin-bottom:10px}
+#board{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:6px;background:#334155;border-radius:10px;width:300px;height:300px;touch-action:none}
+.cell{border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:24px;background:#1e293b;color:#64748b}
+</style>
+</head>
+<body>
+<h1>2048</h1>
+<div class="info">得分: <span id="s">0</span> | 滑动或点击方向键</div>
+<div id="board"></div>
+<script>
+var board=document.getElementById("board"),sEl=document.getElementById("s");
+var g=[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]],score=0,cells=[];
+var colors={0:"#1e293b",2:"#475569",4:"#64748b",8:"#f59e0b",16:"#ef4444",32:"#ec4899",64:"#8b5cf6",128:"#06b6d4",256:"#10b981",512:"#6366f1",1024:"#a855f7",2048:"#eab308"};
+for(var i=0;i<16;i++){var d=document.createElement("div");d.className="cell";board.appendChild(d);cells.push(d)}
+function render(){var k=0;for(var r=0;r<4;r++)for(var c=0;c<4;c++){var v=g[r][c];cells[k].textContent=v||"";cells[k].style.background=colors[v]||"#dc2626";cells[k].style.color=v<=4?"#94a3b8":"#fff";cells[k].style.fontSize=v>=1024?"18px":"24px";k++}sEl.textContent=score}
+function addRand(){var empty=[];for(var r=0;r<4;r++)for(var c=0;c<4;c++)if(!g[r][c])empty.push([r,c]);if(empty.length){var p=empty[Math.floor(Math.random()*empty.length)];g[p[0]][p[1]]=Math.random()<.9?2:4}}
+function slide(row){var a=row.filter(function(x){return x});var b=[];for(var i=0;i<a.length;i++){if(i+1<a.length&&a[i]===a[i+1]){b.push(a[i]*2);score+=a[i]*2;i++}else b.push(a[i])}while(b.length<4)b.push(0);return b}
+function move(dir){
+  var moved=false,prev=JSON.stringify(g);
+  if(dir==="left")for(var r=0;r<4;r++)g[r]=slide(g[r]);
+  else if(dir==="right")for(var r=0;r<4;r++)g[r]=slide(g[r].reverse()).reverse();
+  else if(dir==="up")for(var c=0;c<4;c++){var col=[g[0][c],g[1][c],g[2][c],g[3][c]];col=slide(col);for(var r=0;r<4;r++)g[r][c]=col[r]}
+  else if(dir==="down")for(var c=0;c<4;c++){var col=[g[3][c],g[2][c],g[1][c],g[0][c]];col=slide(col);for(var r=0;r<4;r++)g[3-r][c]=col[r]}
+  if(JSON.stringify(g)!==prev){moved=true;addRand();render()}
+}
+document.addEventListener("keydown",function(e){var k={ArrowLeft:"left",ArrowRight:"right",ArrowUp:"up",ArrowDown:"down"};if(k[e.key]){e.preventDefault();move(k[e.key])}});
+var sx,sy;
+board.addEventListener("touchstart",function(e){sx=e.touches[0].clientX;sy=e.touches[0].clientY});
+board.addEventListener("touchend",function(e){var dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;if(Math.abs(dx)>Math.abs(dy)){move(dx>30?"right":dx<-30?"left":"")}else{move(dy>30?"down":dy<-30?"up":"")}});
+addRand();addRand();render();
+</script>
+</body>
+</html>
