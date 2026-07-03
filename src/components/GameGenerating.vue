@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, nextTick } from 'vue'
 import type { Game } from '../types'
 
 const props = defineProps<{
   game: Game
 }>()
 
+const codeRef = ref<HTMLPreElement | null>(null)
 const currentTokenCount = computed(() => props.game.rawText?.length || 0)
 const startTime = ref(props.game.generatedAt || Date.now())
 const liveSpeed = ref(0)
@@ -22,6 +23,12 @@ watch(() => props.game.rawText, () => {
       }
     }, 200)
   }
+  // 始终滚动到底部（tail -f 效果）
+  nextTick(() => {
+    if (codeRef.value) {
+      codeRef.value.scrollTop = codeRef.value.scrollHeight
+    }
+  })
 }, { immediate: true })
 
 const displayText = computed(() => {
@@ -39,7 +46,7 @@ const hasContent = computed(() => !!props.game.rawText)
       <div class="spinner"></div>
       <p class="waiting-text">正在生成游戏...</p>
     </div>
-    <pre v-else class="code-preview">{{ displayText }}</pre>
+    <pre v-else ref="codeRef" class="code-preview">{{ displayText }}</pre>
 
     <!-- 底部状态栏 - 固定在导航栏上方 -->
     <div class="bottom-bar">
