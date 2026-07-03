@@ -5,8 +5,10 @@ import { extractHtmlFromResponse, parseSSEChunk, generateId, validateGameHtml } 
 import type { Game } from '../types'
 
 // 检测是否在 Vercel 环境（有 /api 路由）
-const isVercelEnv = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')
-  || typeof window !== 'undefined' && window.location.hostname.includes('feed-scription')
+const isVercelEnv = typeof window !== 'undefined' && (
+  window.location.hostname.includes('vercel.app')
+  || window.location.hostname.includes('feedscription.com')
+)
 
 export function useGameGenerator() {
   const { settings } = useSettings()

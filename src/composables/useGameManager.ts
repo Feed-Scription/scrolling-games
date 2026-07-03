@@ -20,6 +20,7 @@ export function useGameManager() {
   const currentGameId = ref<string | null>(null)
   const initError = ref<string | null>(null)
   const retryCount = ref(0)
+  const pendingGenerate = ref(false) // 排队等待生成
 
   // 获取最近生成的游戏描述列表（用于多样性控制）
   function getRecentGameDescriptions(): string[] {
@@ -79,6 +80,11 @@ export function useGameManager() {
     if (getUnplayedCount() >= maxUnplayed) return
     if (gameState.games.filter(g => g.status === 'ready').length >= maxTotal) return
 
+    if (isGenerating.value) {
+      // 当前正在生成，标记排队，完成后自动继续
+      pendingGenerate.value = true
+      return
+    }
     generateNextGame()
   }
 
